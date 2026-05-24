@@ -189,17 +189,13 @@ env = {
 }
 ```
 
-**Run & Debug input (after env push + local workspace file present):**
+**Run & Debug / live HTTP input (no query param needed):**
 
 ```json
 { "advisor_id": 3 }
 ```
 
-**Live HTTP / curl** still needs the query param on Dev Adv today (workspace env is stored but not injected into `$env` at HTTP runtime):
-
-```bash
-curl "https://x6if-wu0q-dtak.n7.xano.io/api:assetmark-advisor-pulse/advisors/3/pulse?hub_base_url=https%3A%2F%2Fxxmf-qrth-inat.n7d.xano.io%2Fapi%3Aassetmark-mock-data-hub" | jq
-```
+Default hub URL is baked into the endpoint (matches `workspace/*.xs` env). Input `hub_base_url` still overrides for testing.
 
 > "Run & Debug is our tight loop — env comes from the workspace file. Push with `--env` promotes code and config. Curl proves the deployed endpoint."
 
@@ -209,9 +205,8 @@ curl "https://x6if-wu0q-dtak.n7.xano.io/api:assetmark-advisor-pulse/advisors/3/p
 |-------|--------|
 | `workspace push --env` succeeds | ✅ |
 | Pull shows `MOCK_DATA_HUB_BASE_URL` in `workspace/*.xs` | ✅ |
-| Run & Debug with `{ "advisor_id": 3 }` only | ✅ use this in the room |
-| HTTP without `hub_base_url` param | ❌ 400 — pass param for curl |
-| HTTP with `hub_base_url` param | ✅ Maria first |
+| Run & Debug / HTTP with `{ "advisor_id": 3 }` only | ✅ Maria first |
+| HTTP with `hub_base_url` param (override) | ✅ Maria first |
 
 ---
 

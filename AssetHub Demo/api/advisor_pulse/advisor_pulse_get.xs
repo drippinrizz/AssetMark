@@ -8,11 +8,15 @@ query "advisors/{advisor_id}/pulse" verb=GET {
   }
   stack {
     var $hub_base_url {
-      value = $input.hub_base_url ?? $env.MOCK_DATA_HUB_BASE_URL
+      value = "https://xxmf-qrth-inat.n7d.xano.io/api:assetmark-mock-data-hub"
     }
-    precondition ($hub_base_url != null && $hub_base_url != "") {
-      error_type = "inputerror"
-      error = "Set MOCK_DATA_HUB_BASE_URL or pass hub_base_url."
+    conditional {
+      if ($input.hub_base_url != null && $input.hub_base_url != "") {
+        var.update $hub_base_url { value = $input.hub_base_url }
+      }
+      elseif ($env.MOCK_DATA_HUB_BASE_URL != null && $env.MOCK_DATA_HUB_BASE_URL != "") {
+        var.update $hub_base_url { value = $env.MOCK_DATA_HUB_BASE_URL }
+      }
     }
     api.request {
       url = $hub_base_url ~ "/clients?advisor_id=" ~ ($input.advisor_id|to_text)
