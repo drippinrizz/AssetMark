@@ -169,21 +169,49 @@ Run & Debug again with the same JSON. Point at Patricia Lim (`client_id 89`, `hi
 
 ---
 
-## Beat 5 — Push (promote)
+## Beat 5 — Push with env (promote)
 
-Run & Debug = tight validation loop. Push = deploy for real.
+Run & Debug reads env from the local `workspace/*.xs` file. **Push with `--env`** to sync that file (and the hub URL) to the remote workspace metadata.
 
 ```bash
-xano workspace push -d "AssetHub Demo" -w 304 -p "AssetMark Dev Adv" --sync --force
+xano workspace push -d "AssetHub Demo" -w 304 -p "AssetMark Dev Adv" --sync --env --force
 ```
 
-Optional curl after push:
+Env lives in:
+
+```
+AssetHub Demo/workspace/asset_mark_advisor_pulse_demo.xs
+```
+
+```xs
+env = {
+  MOCK_DATA_HUB_BASE_URL: "https://xxmf-qrth-inat.n7d.xano.io/api:assetmark-mock-data-hub"
+}
+```
+
+**Run & Debug input (after env push + local workspace file present):**
+
+```json
+{ "advisor_id": 3 }
+```
+
+**Live HTTP / curl** still needs the query param on Dev Adv today (workspace env is stored but not injected into `$env` at HTTP runtime):
 
 ```bash
 curl "https://x6if-wu0q-dtak.n7.xano.io/api:assetmark-advisor-pulse/advisors/3/pulse?hub_base_url=https%3A%2F%2Fxxmf-qrth-inat.n7d.xano.io%2Fapi%3Aassetmark-mock-data-hub" | jq
 ```
 
-> "Run & Debug is our tight loop. Push is when we're happy and want it live."
+> "Run & Debug is our tight loop — env comes from the workspace file. Push with `--env` promotes code and config. Curl proves the deployed endpoint."
+
+### Env push test results (verified)
+
+| Check | Result |
+|-------|--------|
+| `workspace push --env` succeeds | ✅ |
+| Pull shows `MOCK_DATA_HUB_BASE_URL` in `workspace/*.xs` | ✅ |
+| Run & Debug with `{ "advisor_id": 3 }` only | ✅ use this in the room |
+| HTTP without `hub_base_url` param | ❌ 400 — pass param for curl |
+| HTTP with `hub_base_url` param | ✅ Maria first |
 
 ---
 
@@ -195,19 +223,18 @@ curl "https://x6if-wu0q-dtak.n7.xano.io/api:assetmark-advisor-pulse/advisors/3/p
 | `GET /applications` | 128 | `{ "client_id": 47 }` |
 | `GET /clients/{id}/events` | 128 | `{ "client_id": 47 }` |
 | `GET /transcripts` | 128 | `{ "client_id": 112 }` |
-| **`GET /advisors/{id}/pulse`** | **304** | `{ "advisor_id": 3, "hub_base_url": "https://xxmf-qrth-inat.n7d.xano.io/api:assetmark-mock-data-hub" }` |
+| **`GET /advisors/{id}/pulse`** | **304** | `{ "advisor_id": 3 }` *(Run & Debug — env from local `workspace/*.xs`)* |
 
-If `MOCK_DATA_HUB_BASE_URL` is set on workspace 304, pulse input simplifies to:
+For **curl / live HTTP**, add the hub override:
 
 ```json
-{ "advisor_id": 3 }
+{
+  "advisor_id": 3,
+  "hub_base_url": "https://xxmf-qrth-inat.n7d.xano.io/api:assetmark-mock-data-hub"
+}
 ```
 
-Set in Dev Adv workspace env:
-
-```
-MOCK_DATA_HUB_BASE_URL=https://xxmf-qrth-inat.n7d.xano.io/api:assetmark-mock-data-hub
-```
+Or as query param: `?hub_base_url=https%3A%2F%2Fxxmf-qrth-inat.n7d.xano.io%2Fapi%3Aassetmark-mock-data-hub`
 
 ---
 
@@ -256,8 +283,8 @@ npm run validate
 # Hub → Sandbox
 xano workspace push -d "AssetMark Data Hub" -w 128 -p "AssetMark Sandbox" --sync --force
 
-# Pulse → Dev Adv
-xano workspace push -d "AssetHub Demo" -w 304 -p "AssetMark Dev Adv" --sync --force
+# Pulse → Dev Adv (include --env)
+xano workspace push -d "AssetHub Demo" -w 304 -p "AssetMark Dev Adv" --sync --env --force
 
 # Seed hub
 node -e 'const fs=require("fs"); const seed=JSON.parse(fs.readFileSync("training-assets/mock-data-hub-seed.json","utf8")); fetch("https://xxmf-qrth-inat.n7d.xano.io/api:assetmark-mock-data-hub/admin/seed", {method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({seed})}).then(async r=>{console.log(r.status); console.log(await r.text()); if(!r.ok) process.exit(1);})'

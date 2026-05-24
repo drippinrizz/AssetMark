@@ -40,8 +40,8 @@ That regenerates the seed fixture and runs the local Advisor Pulse contract test
 # Hub → Sandbox instance
 xano workspace push -d "AssetMark Data Hub" -w 128 -p "AssetMark Sandbox" --sync --force
 
-# Advisor Pulse → Dev Adv instance
-xano workspace push -d "AssetHub Demo" -w 304 -p "AssetMark Dev Adv" --sync --force
+# Pulse → Dev Adv instance (include --env for workspace vars)
+xano workspace push -d "AssetHub Demo" -w 304 -p "AssetMark Dev Adv" --sync --env --force
 ```
 
 Seed the hub on Sandbox:
