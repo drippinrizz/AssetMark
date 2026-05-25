@@ -294,6 +294,26 @@ Same hub URL sticky note. They build in their own Dev Adv workspace. Same Prompt
 
 ---
 
+## Between cohorts (reset)
+
+Run this between sessions — **hub stays seeded on Sandbox 128**:
+
+```bash
+npm run reset:pulse
+```
+
+What it does:
+
+| Kept on workspace 304 | Removed |
+|-----------------------|---------|
+| User table + auth API | Advisor Pulse endpoints |
+| Demo login user | `build_list` function |
+| Workspace env + UI static host | — |
+
+Demo login still works (`advisor.demo@assetmark.com` / `DemoPass123!`). Pulse results return after the next live build.
+
+---
+
 ## Local tests (optional, pre-room)
 
 ```bash
@@ -330,4 +350,7 @@ curl "https://x6if-wu0q-dtak.n7.xano.io/api:assetmark-advisor-pulse/advisors/3/p
 
 # Bootstrap pulse workspace after reset (push + demo user + UI)
 npm run bootstrap:pulse
+
+# Reset between cohorts — keeps auth/user, removes pulse APIs
+npm run reset:pulse
 ```

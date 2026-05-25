@@ -1,4 +1,4 @@
-// Empty baseline for cohort resets — env only, no APIs.
+// Cohort reset baseline — keeps auth + user table; pulse APIs are removed.
 workspace "AssetMark Advisor Pulse Demo" {
   description = "Advisor Pulse API demo that queries the Mock Data Hub."
   env = {

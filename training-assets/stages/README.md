@@ -35,16 +35,18 @@ Copy `02-prompt-2/advisor_pulse_get.xs` from `AssetHub Demo/api/advisor_pulse/ad
 
 ## Reset pulse workspace between cohorts
 
-Does **not** touch the hub (Sandbox 128).
+Does **not** touch the hub (Sandbox 128). **Keeps** the user table, auth API (`login` / `me` / `signup`), workspace env, and the demo login user. **Removes** Advisor Pulse endpoints and functions so the next cohort starts at Prompt 1.
 
 ```bash
-# Empty workspace 304 — env only, delete all pulse APIs (default for live cohorts)
+# Default — auth stays, pulse APIs deleted
 npm run reset:pulse
 
 # Also wipe ephemeral sandbox
 npm run reset:pulse -- --sandbox
 
-# Rehearsal: reset to a known stage instead of empty
+# Rehearsal: reset to a known stage (+ auth preserved)
 npm run reset:pulse -- --stage 1
 npm run reset:pulse -- --stage 2
 ```
+
+After reset, open the demo UI and sign in (`advisor.demo@assetmark.com` / `DemoPass123!`). Login works immediately; pulse results appear after the live build.
