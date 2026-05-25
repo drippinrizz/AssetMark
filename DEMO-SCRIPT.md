@@ -169,44 +169,74 @@ Run & Debug again with the same JSON. Point at Patricia Lim (`client_id 89`, `hi
 
 ---
 
-## Beat 5 — Push with env (promote)
+## Beat 5 — Ephemeral sandbox env + push (then promote)
 
-Run & Debug reads env from the local `workspace/*.xs` file. **Push with `--env`** to sync that file (and the hub URL) to the remote workspace metadata.
+**Use the personal ephemeral sandbox** — not `workspace push --env`. Sandbox env is per-session config you set with the CLI; code goes up with `sandbox push`; you review and promote in the browser.
+
+Stage **API files only** (exclude `workspace/*.xs` — sandbox env replaces that):
 
 ```bash
-xano workspace push -d "AssetHub Demo" -w 304 -p "AssetMark Dev Adv" --sync --env --force
+mkdir -p /tmp/pulse-sandbox && cp -R "AssetHub Demo/api" /tmp/pulse-sandbox/
 ```
 
-Env lives in:
+Set the hub URL on the ephemeral sandbox:
 
-```
-AssetHub Demo/workspace/asset_mark_advisor_pulse_demo.xs
-```
-
-```xs
-env = {
-  MOCK_DATA_HUB_BASE_URL: "https://xxmf-qrth-inat.n7d.xano.io/api:assetmark-mock-data-hub"
-}
+```bash
+xano sandbox env set -n MOCK_DATA_HUB_BASE_URL \
+  --value "https://xxmf-qrth-inat.n7d.xano.io/api:assetmark-mock-data-hub"
 ```
 
-**Run & Debug / live HTTP input (no query param needed):**
+Push code to the sandbox (partial by default; `--sync --force` for full push):
+
+```bash
+xano sandbox push -d /tmp/pulse-sandbox --sync --force
+```
+
+Open review — Run & Debug / promote from here:
+
+```bash
+xano sandbox review
+```
+
+**Run & Debug input in sandbox review UI:**
 
 ```json
 { "advisor_id": 3 }
 ```
 
-Default hub URL is baked into the endpoint (matches `workspace/*.xs` env). Input `hub_base_url` still overrides for testing.
+After promote → workspace **304**, prove the live endpoint:
 
-> "Run & Debug is our tight loop — env comes from the workspace file. Push with `--env` promotes code and config. Curl proves the deployed endpoint."
+```bash
+curl "https://x6if-wu0q-dtak.n7.xano.io/api:assetmark-advisor-pulse/advisors/3/pulse" | jq '.[0]'
+```
 
-### Env push test results (verified)
+> "Ephemeral sandbox is our safe loop — env via `sandbox env set`, code via `sandbox push`, test in review, then promote. No touching shared workspace until we're happy."
+
+Optional YAML round-trip for env:
+
+```bash
+xano sandbox env get_all --view          # export
+xano sandbox env set_all -f ./env.yaml   # import
+```
+
+Local `workspace/*.xs` env block is still useful for VS Code Run & Debug against workspace **304**:
+
+```
+AssetHub Demo/workspace/asset_mark_advisor_pulse_demo.xs
+```
+
+### Ephemeral sandbox test results (verified via CLI)
 
 | Check | Result |
 |-------|--------|
-| `workspace push --env` succeeds | ✅ |
-| Pull shows `MOCK_DATA_HUB_BASE_URL` in `workspace/*.xs` | ✅ |
-| Run & Debug / HTTP with `{ "advisor_id": 3 }` only | ✅ Maria first |
-| HTTP with `hub_base_url` param (override) | ✅ Maria first |
+| `xano sandbox get` — session `szro-ymjb-5d7f`, ~60 min TTL | ✅ |
+| `xano sandbox env set` / `get` / `list` / `delete` | ✅ |
+| `xano sandbox env set_all` / `get_all --view` | ✅ |
+| `xano sandbox push` — 2 docs (api group + pulse query) | ✅ |
+| `xano sandbox pull --env` — env in pulled `workspace/*.xs` | ✅ |
+| `xano sandbox review --url-only` — impersonate URL on Dev Adv | ✅ |
+| `curl …/pulse?_ti=…` hits **deployed** workspace 304, not sandbox draft | ⚠️ use review UI to test sandbox |
+| Live workspace 304 curl (after promote / hardcoded hub fallback) | ✅ Maria first |
 
 ---
 
@@ -275,12 +305,29 @@ npm run validate
 ## CLI reference
 
 ```bash
-# Hub → Sandbox
+# Hub → Sandbox instance workspace 128
 xano workspace push -d "AssetMark Data Hub" -w 128 -p "AssetMark Sandbox" --sync --force
 
-# Pulse → Dev Adv (include --env)
+# Pulse → ephemeral sandbox (env + code, no workspace/*.xs)
+mkdir -p /tmp/pulse-sandbox && cp -R "AssetHub Demo/api" /tmp/pulse-sandbox/
+xano sandbox env set -n MOCK_DATA_HUB_BASE_URL \
+  --value "https://xxmf-qrth-inat.n7d.xano.io/api:assetmark-mock-data-hub"
+xano sandbox push -d /tmp/pulse-sandbox --sync --force
+xano sandbox review
+
+# Pulse → Dev Adv workspace 304 (after sandbox promote, or direct deploy)
 xano workspace push -d "AssetHub Demo" -w 304 -p "AssetMark Dev Adv" --sync --env --force
 
 # Seed hub
 node -e 'const fs=require("fs"); const seed=JSON.parse(fs.readFileSync("training-assets/mock-data-hub-seed.json","utf8")); fetch("https://xxmf-qrth-inat.n7d.xano.io/api:assetmark-mock-data-hub/admin/seed", {method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({seed})}).then(async r=>{console.log(r.status); console.log(await r.text()); if(!r.ok) process.exit(1);})'
+
+# Smoke test (live workspace 304)
+curl "https://x6if-wu0q-dtak.n7.xano.io/api:assetmark-advisor-pulse/advisors/3/pulse" | jq '.[0]'
+
+# Demo UI (static host on workspace 304)
+# https://default-dev-8df103-x6if-wu0q-dtak.n7.xano.io
+# Login: advisor.demo@assetmark.com / DemoPass123!
+
+# Bootstrap pulse workspace after reset (push + demo user + UI)
+npm run bootstrap:pulse
 ```

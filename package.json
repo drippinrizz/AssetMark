@@ -6,6 +6,10 @@
   "scripts": {
     "seed": "node scripts/generate-mock-data.mjs",
     "test": "node --test tests/*.test.mjs",
-    "validate": "npm run seed && npm test"
+    "validate": "npm run seed && npm test",
+    "reset:pulse": "node scripts/reset-pulse-workspace.mjs",
+    "seed:demo-user": "node scripts/seed-demo-user.mjs",
+    "deploy:ui": "node scripts/deploy-pulse-ui.mjs",
+    "bootstrap:pulse": "node scripts/bootstrap-pulse-workspace.mjs"
   }
 }
