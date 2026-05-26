@@ -38,6 +38,82 @@ Pulse on Dev Adv calls the hub on Sandbox over REST. Attendees do the same in th
 
 ---
 
+## Agent prompts (copy-paste)
+
+### Stage 1 — Prompt 1
+
+Build the core Advisor Pulse API. Paste into agent mode with `AssetHub Demo/` open.
+
+```
+Build an Advisor Pulse API in XanoScript (.xs files).
+
+One endpoint: GET /advisors/{advisor_id}/pulse
+
+Return a JSON array of that advisor's clients who need attention, highest priority first.
+
+Flag a client if ANY of these is true:
+1. account_application with status "needs_info" for 14+ days (use status_changed_at)
+2. no engagement_event in the last 30 days (use occurred_at)
+3. most recent call_transcript has sentiment_label = "negative"
+
+The Mock Data Hub is on a DIFFERENT Xano instance. Base URL:
+https://xxmf-qrth-inat.n7d.xano.io/api:assetmark-mock-data-hub
+
+Pull data via api.request from:
+- GET /clients?advisor_id={advisor_id}
+- GET /applications?client_id={client_id}
+- GET /clients/{client_id}/events
+- GET /transcripts?client_id={client_id}
+
+Each result object:
+- client_id, advisor_id, name, reason, reason_detail, days_since_last_contact, priority_score
+
+Reasons: stalled_application | no_recent_contact | negative_sentiment
+
+Priority: stalled_application highest, then negative_sentiment (95), then no_recent_contact.
+
+Use XanoScript syntax only — not SQL, not JavaScript.
+Organize as api_group + query file(s) under api/.
+Auth: none (training demo).
+Read hub URL from $env.MOCK_DATA_HUB_BASE_URL when set; allow optional hub_base_url input override.
+```
+
+**Run & Debug input (Dev Adv / 304):**
+
+```json
+{
+  "advisor_id": 3,
+  "hub_base_url": "https://xxmf-qrth-inat.n7d.xano.io/api:assetmark-mock-data-hub"
+}
+```
+
+**Pass:** Maria Vasquez (47) first, `stalled_application`. Daniel Okafor (112) second, `negative_sentiment`. Patricia Lim (89) **not** in list. No `high_value_stale` anywhere.
+
+Rehearsal snapshot: `training-assets/stages/01-prompt-1/`
+
+---
+
+### Stage 2 — Prompt 2
+
+Add the high-value rule to the same endpoint. Paste after Stage 1 validates.
+
+```
+Add a fourth rule: clients with household_assets_usd > 1,000,000
+with no engagement_event in the last 14 days should also be flagged.
+
+Add reason: high_value_stale
+priority_score: above no_recent_contact, below negative_sentiment.
+Keep the response shape the same.
+```
+
+**Run & Debug input:** same JSON as Stage 1.
+
+**Pass:** Patricia Lim (89) appears with `high_value_stale`. Maria still first.
+
+Rehearsal snapshot: `training-assets/stages/02-prompt-2/`
+
+---
+
 ## Before the room (5 min)
 
 1. Open this repo in VS Code (Xano plugin + language server enabled).
@@ -89,41 +165,7 @@ In Xano UI (Sandbox, workspace 128): open `account_applications`, filter `status
 
 Switch to agent mode. Open a clean context or `AssetHub Demo/`.
 
-**Prompt 1 — paste verbatim:**
-
-```
-Build an Advisor Pulse API in XanoScript (.xs files).
-
-One endpoint: GET /advisors/{advisor_id}/pulse
-
-Return a JSON array of that advisor's clients who need attention, highest priority first.
-
-Flag a client if ANY of these is true:
-1. account_application with status "needs_info" for 14+ days (use status_changed_at)
-2. no engagement_event in the last 30 days (use occurred_at)
-3. most recent call_transcript has sentiment_label = "negative"
-
-The Mock Data Hub is on a DIFFERENT Xano instance. Base URL:
-https://xxmf-qrth-inat.n7d.xano.io/api:assetmark-mock-data-hub
-
-Pull data via api.request from:
-- GET /clients?advisor_id={advisor_id}
-- GET /applications?client_id={client_id}
-- GET /clients/{client_id}/events
-- GET /transcripts?client_id={client_id}
-
-Each result object:
-- client_id, advisor_id, name, reason, reason_detail, days_since_last_contact, priority_score
-
-Reasons: stalled_application | no_recent_contact | negative_sentiment
-
-Priority: stalled_application highest, then negative_sentiment (95), then no_recent_contact.
-
-Use XanoScript syntax only — not SQL, not JavaScript.
-Organize as api_group + query file(s) under api/.
-Auth: none (training demo).
-Read hub URL from $env.MOCK_DATA_HUB_BASE_URL when set; allow optional hub_base_url input override.
-```
+**Paste Prompt 1** from [Stage 1 — Prompt 1](#stage-1--prompt-1) above.
 
 **While it generates, narrate:**
 
@@ -133,14 +175,7 @@ Read hub URL from $env.MOCK_DATA_HUB_BASE_URL when set; allow optional hub_base_
 
 Connect to **Dev Adv / 304**. Open `advisor_pulse_get.xs`.
 
-**Run & Debug input:**
-
-```json
-{
-  "advisor_id": 3,
-  "hub_base_url": "https://xxmf-qrth-inat.n7d.xano.io/api:assetmark-mock-data-hub"
-}
-```
+Run & Debug with the **Stage 1 input** above.
 
 **Good result:** array with Maria Vasquez first, `reason: "stalled_application"`.
 
@@ -152,16 +187,7 @@ Connect to **Dev Adv / 304**. Open `advisor_pulse_get.xs`.
 
 > "Now watch — one more rule."
 
-**Prompt 2:**
-
-```
-Add a fourth rule: clients with household_assets_usd > 1,000,000
-with no engagement_event in the last 14 days should also be flagged.
-
-Add reason: high_value_stale
-priority_score: above no_recent_contact, below negative_sentiment.
-Keep the response shape the same.
-```
+**Paste Prompt 2** from [Stage 2 — Prompt 2](#stage-2--prompt-2) above.
 
 Run & Debug again with the same JSON. Point at Patricia Lim (`client_id 89`, `high_value_stale`).
 
